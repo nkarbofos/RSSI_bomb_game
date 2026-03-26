@@ -500,7 +500,10 @@ void ClientConnection::sendGameStartIfReady() {
     os << "\n";
 
     seeker->sendLine(os.str());
-    hider->sendLine(os.str());    
+    hider->sendLine(os.str());
+
+    auto stateMsg = seeker->formatStateMessage();
+    seeker->sendLine(stateMsg);
 }
 
 void ClientConnection::sendPlacementDone() {

@@ -3,7 +3,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <mutex>
+#include <shared_mutex>
 
 #include "server/game_session.hpp"
 
@@ -21,7 +21,7 @@ private:
     static constexpr size_t max_simultaneous_games_{100};
 
     std::unordered_map<std::string, GameSessionPtr> sessions_;
-    mutable std::mutex mutex_;
+    mutable std::shared_mutex mutex_;
     std::string generateInviteCode() const;
 };
 

@@ -32,3 +32,13 @@ target_link_libraries(rssi_bomb_server_app
         rssi_bomb_server
 )
 
+add_executable(server_tests
+    ../tests/server_tests.cpp
+)
+
+target_link_libraries(server_tests
+    PRIVATE
+        rssi_bomb_server
+        Boost::system
+)
+

@@ -10,7 +10,7 @@ namespace rssi_game::server {
 GameManager::GameManager() = default;
 
 std::string GameManager::createLobby() {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::shared_mutex> lock(mutex_);
     if (sessions_.size() >= max_simultaneous_games_) {
         throw std::runtime_error("createLobby: too many simultaneous games");
     }
@@ -30,7 +30,7 @@ GameSessionPtr GameManager::joinLobby(const std::string& invite_code) {
 }
 
 GameSessionPtr GameManager::findSession(const std::string& invite_code) {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     auto it = sessions_.find(invite_code);
     if (it == sessions_.end()) {
         return nullptr;
@@ -39,7 +39,7 @@ GameSessionPtr GameManager::findSession(const std::string& invite_code) {
 }
 
 void GameManager::maintain() {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::shared_mutex> lock(mutex_);
     for (auto it = sessions_.begin(); it != sessions_.end();) {
         if (it->second && it->second->isFinished()) {
             it = sessions_.erase(it);
