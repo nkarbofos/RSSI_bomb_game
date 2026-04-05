@@ -1,33 +1,46 @@
-// Клиентская часть сетевого взаимодействия (Qt + Boost.Asio или QtNetwork).
-// Реализация запросов и протокола будет добавлена позже.
-
 #pragma once
 
-#include <memory>
-#include <string>
-#include <vector>
+#include <QObject>
+#include <QString>
 
-#include "common/game_types.hpp"
+#include <memory>
 
 namespace rssi_game::client {
 
-class NetworkClient {
-public:
-    NetworkClient();
-    void connectToServer(const std::string& host, std::uint16_t port);
-    void createLobby();
-    void joinLobby(const std::string& invite_code);
-    void sendSeekerMove();
-    void requestGameState();
+/// TCP-клиент протокола: I/O в отдельном потоке (`io_context::run`), сигналы в GUI-поток.
+class NetworkClient : public QObject {
+    Q_OBJECT
 
-    void onGameStateUpdated();
-    void onConnectionLost();
+public:
+    explicit NetworkClient(QObject* parent = nullptr);
+    ~NetworkClient() override;
+
+public slots:
+    void connectToServer(QString host, quint16 port);
+    void disconnectClient();
+
+    void createLobby();
+    void joinLobby(QString inviteCode);
+    void placeTransmitters(int x1, int y1, int x2, int y2, int x3, int y3);
+    void sendGradientStep();
+    void moveReceiver(int idx, int x, int y);
+    void addReceiver(int x, int y);
+    void removeReceiver(int idx);
+    void sendDone();
+
+signals:
+    void roleReceived(QString role);
+    void inviteReceived(QString code);
+    void gameStarted(int gridW, int gridH, int placementSec);
+    void placementDone(QString line);
+    void stateLineReceived(QString line);
+    void gameFinished(QString line);
+    void errorReceived(QString message);
+    void connectionChanged(bool connected);
 
 private:
-    // TODO
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
 };
 
-using NetworkClientPtr = std::shared_ptr<NetworkClient>;
-
 } // namespace rssi_game::client
-

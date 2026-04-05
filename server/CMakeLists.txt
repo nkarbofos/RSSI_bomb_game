@@ -34,11 +34,18 @@ target_link_libraries(rssi_bomb_server_app
 
 add_executable(server_tests
     ../tests/server_tests.cpp
+    ../tests/server_garbage_tests.cpp
+    ../tests/protocol_parser_gtest.cpp
+    ../tests/test_helpers.cpp
 )
 
 target_link_libraries(server_tests
     PRIVATE
         rssi_bomb_server
+        rssi_bomb_common
         Boost::system
+        GTest::gtest_main
 )
+
+add_test(NAME server_tests COMMAND server_tests)
 
