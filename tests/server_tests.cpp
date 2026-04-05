@@ -103,6 +103,9 @@ TEST_F(TestServerFixture, FullProtocolFlow) {
         << "Expected STATE after PLACEMENT_DONE for seeker, got: " << stateAfterPlacement;
     ASSERT_EQ(placementHider.rfind("PLACEMENT_DONE", 0), 0u)
         << "Unexpected placementHider: " << placementHider;
+    std::string stateAfterPlacementHider = recvLine(hider, hiderBuf, std::chrono::milliseconds(2000));
+    ASSERT_EQ(stateAfterPlacementHider.rfind("STATE", 0), 0u)
+        << "Expected STATE after PLACEMENT_DONE for hider, got: " << stateAfterPlacementHider;
 
     sendLine(seeker, "DONE");
     std::string finishedSeeker = recvLine(seeker, seekerBuf, std::chrono::milliseconds(2000));

@@ -37,6 +37,9 @@ class GameController : public QObject {
     Q_PROPERTY(int placementSelectionCount READ placementSelectionCount NOTIFY
                      placementSelectionCountChanged)
     Q_PROPERTY(int selectedCellIndex READ selectedCellIndex NOTIFY selectedCellIndexChanged)
+    Q_PROPERTY(QVariantList receiverCellLabels READ receiverCellLabels NOTIFY receiverCellLabelsChanged)
+    Q_PROPERTY(QString stateTurn READ stateTurn NOTIFY stateTurnChanged)
+    Q_PROPERTY(QString stateRssiFormatted READ stateRssiFormatted NOTIFY stateRssiFormattedChanged)
 
 public:
     explicit GameController(QObject* parent = nullptr);
@@ -61,6 +64,9 @@ public:
     QVariantList placementMask() const { return placement_mask_; }
     int placementSelectionCount() const { return placement_pick_.size(); }
     int selectedCellIndex() const { return selected_cell_index_; }
+    QVariantList receiverCellLabels() const { return receiver_cell_labels_; }
+    QString stateTurn() const { return state_turn_; }
+    QString stateRssiFormatted() const { return state_rssi_formatted_; }
 
 public slots:
     void connectToServer();
@@ -93,6 +99,9 @@ signals:
     void placementMaskChanged();
     void placementSelectionCountChanged();
     void selectedCellIndexChanged();
+    void receiverCellLabelsChanged();
+    void stateTurnChanged();
+    void stateRssiFormattedChanged();
 
 private slots:
     void onRoleReceived(const QString& role);
@@ -108,6 +117,8 @@ private slots:
 private:
     void setStatus(const QString& s);
     void rebuildCellColors();
+    void rebuildReceiverCellLabels();
+    void updateStateSummaryFromLastState();
     void refreshPlacementGridColors();
     void clearPlacementSelection();
     bool isHider() const;
@@ -144,6 +155,10 @@ private:
 
     int selected_cell_index_{-1};
     QVector<std::pair<int, int>> result_tx_positions_;
+
+    QVariantList receiver_cell_labels_;
+    QString state_turn_{QStringLiteral("—")};
+    QString state_rssi_formatted_;
 };
 
 } // namespace rssi_game::client

@@ -567,7 +567,9 @@ std::string ClientConnection::formatStateMessage() const {
 void ClientConnection::sendStateToSeeker() {
     auto msg = formatStateMessage();
     auto seeker = server_.getSeeker(invite_code_);
+    auto hider = server_.getHider(invite_code_);
     if (seeker) seeker->sendLine(msg);
+    if (hider) hider->sendLine(msg);
 }
 
 std::string ClientConnection::formatPlacementDoneMessage() const {

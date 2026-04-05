@@ -89,7 +89,8 @@ ApplicationWindow {
 
             ColumnLayout {
                 Layout.fillWidth: true
-                Layout.fillHeight: true
+                Layout.fillHeight: false
+                Layout.alignment: Qt.AlignTop
                 visible: game.boardVisible
                        && !(game.phase === "Placement" && game.myRole === "Seeker")
 
@@ -104,19 +105,33 @@ ApplicationWindow {
                     rowSpacing: 2
                     columnSpacing: 2
                     Layout.fillWidth: true
-                    Layout.fillHeight: true
+                    Layout.fillHeight: false
+                    readonly property real cellSide: Math.max(
+                        4,
+                        (width - columnSpacing * (game.gridW - 1)) / game.gridW)
 
                     Repeater {
                         model: game.gridW * game.gridH
                         Item {
-                            width: Math.max(4, (fieldGrid.width - fieldGrid.columnSpacing * (game.gridW - 1)) / game.gridW)
-                            height: Math.max(4, (fieldGrid.height - fieldGrid.rowSpacing * (game.gridH - 1)) / game.gridH)
+                            width: fieldGrid.cellSide
+                            height: fieldGrid.cellSide
 
                             Rectangle {
                                 anchors.fill: parent
                                 border.width: index === game.selectedCellIndex ? 3 : 1
                                 border.color: index === game.selectedCellIndex ? "#2980b9" : "#888"
                                 color: index < game.cellColors.length ? game.cellColors[index] : "#eeeeee"
+                            }
+                            Text {
+                                anchors.centerIn: parent
+                                visible: index < game.receiverCellLabels.length
+                                         && Number(game.receiverCellLabels[index]) >= 0
+                                text: Number(game.receiverCellLabels[index])
+                                font.pixelSize: Math.min(parent.width, parent.height) * 0.38
+                                font.bold: true
+                                color: "#1a5276"
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
                             }
                             MouseArea {
                                 anchors.fill: parent
@@ -146,11 +161,19 @@ ApplicationWindow {
                     text: qsTr("Ожидание: противник расставляет передатчики. Поле откроется после расстановки.")
                 }
 
+                Label {
+                    visible: game.phase === "Search" && game.myRole === "Hider"
+                    wrapMode: Text.Wrap
+                    width: parent.width
+                    text: qsTr("Противник ищет передатчики — на поле видны его приёмники (цифры 0–2) и обновления хода.")
+                    font.bold: true
+                }
+
                 ColumnLayout {
                     visible: game.phase === "Placement" && game.myRole === "Hider"
                     spacing: 6
                     Label {
-                        text: qsTr("Hider: выберите 3 клетки (клик ЛКМ), затем подтвердите.")
+                        text: qsTr("Hider: выберите 3 клетки (клик ЛКМ). После третьего клика расстановка отправится автоматически; при необходимости нажмите «Подтвердить».")
                         font.bold: true
                         wrapMode: Text.Wrap
                         Layout.fillWidth: true
@@ -234,6 +257,29 @@ ApplicationWindow {
                 }
 
                 Label {
+                    visible: game.phase === "Search" || game.phase === "Finished"
+                    text: qsTr("turn: ") + game.stateTurn
+                    font.bold: true
+                    color: "#e6e6e6"
+                }
+                Label {
+                    visible: game.phase === "Search" || game.phase === "Finished"
+                    text: qsTr("RSSI")
+                    font.bold: true
+                    color: "#e6e6e6"
+                }
+                Text {
+                    visible: game.phase === "Search" || game.phase === "Finished"
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    text: game.stateRssiFormatted.length > 0
+                          ? game.stateRssiFormatted
+                          : qsTr("— (ожидание STATE)")
+                    font.family: "monospace"
+                    color: "#e6e6e6"
+                }
+
+                Label {
                     text: qsTr("Последний STATE")
                     font.bold: true
                 }
@@ -244,6 +290,7 @@ ApplicationWindow {
                         readOnly: true
                         wrapMode: Text.Wrap
                         text: game.lastStateLine
+                        font.family: "monospace"
                     }
                 }
             }

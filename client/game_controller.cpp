@@ -96,6 +96,7 @@ void GameController::refreshPlacementGridColors() {
         cell_colors_ = std::move(out);
         emit cellColorsChanged();
         emit placementMaskChanged();
+        rebuildReceiverCellLabels();
         return;
     }
 
@@ -124,6 +125,7 @@ void GameController::refreshPlacementGridColors() {
     cell_colors_ = std::move(out);
     emit cellColorsChanged();
     emit placementMaskChanged();
+    rebuildReceiverCellLabels();
 }
 
 void GameController::resetSessionUi() {
@@ -141,13 +143,17 @@ void GameController::resetSessionUi() {
     emit phaseChanged();
     last_state_.clear();
     emit lastStateLineChanged();
-    clearPlacementSelection();
     last_state_data_ = {};
+    clearPlacementSelection();
     result_tx_positions_.clear();
     if (selected_cell_index_ != -1) {
         selected_cell_index_ = -1;
         emit selectedCellIndexChanged();
     }
+    state_turn_ = QStringLiteral("—");
+    state_rssi_formatted_.clear();
+    emit stateTurnChanged();
+    emit stateRssiFormattedChanged();
 }
 
 void GameController::hiderClickCell(int cellIndex) {
@@ -175,6 +181,9 @@ void GameController::hiderClickCell(int cellIndex) {
     placement_pick_.push_back({x, y});
     emit placementSelectionCountChanged();
     refreshPlacementGridColors();
+    if (placement_pick_.size() == 3) {
+        confirmPlacementFromSelection();
+    }
 }
 
 void GameController::confirmPlacementFromSelection() {
@@ -304,6 +313,7 @@ void GameController::onStateLine(const QString& line) {
         return;
     }
     last_state_data_ = *p.state;
+    updateStateSummaryFromLastState();
     phase_ = QStringLiteral("Search");
     emit phaseChanged();
     rebuildCellColors();
@@ -433,6 +443,70 @@ void GameController::rebuildCellColors() {
     }
     cell_colors_ = std::move(out);
     emit cellColorsChanged();
+    rebuildReceiverCellLabels();
+}
+
+void GameController::rebuildReceiverCellLabels() {
+    const int cells = grid_w_ * grid_h_;
+    QVariantList labels;
+    labels.reserve(cells);
+
+    if (isHider() && isPlacementPhase()) {
+        for (int i = 0; i < cells; ++i) {
+            labels.push_back(QVariant(-1));
+        }
+    } else {
+        for (int y = 0; y < grid_h_; ++y) {
+            for (int x = 0; x < grid_w_; ++x) {
+                int label = -1;
+                for (std::size_t i = 0; i < last_state_data_.receiver_positions.size(); ++i) {
+                    const auto& pos = last_state_data_.receiver_positions[i];
+                    if (pos.first == x && pos.second == y) {
+                        label = static_cast<int>(i);
+                        break;
+                    }
+                }
+                labels.push_back(QVariant(label));
+            }
+        }
+    }
+    receiver_cell_labels_ = std::move(labels);
+    emit receiverCellLabelsChanged();
+}
+
+void GameController::updateStateSummaryFromLastState() {
+    QString turn = QStringLiteral("—");
+    QString rssi;
+    if (!last_state_data_.rssi.empty()) {
+        turn = QStringLiteral("%1 / %2").arg(last_state_data_.turn).arg(last_state_data_.max_turns);
+        QString body = QStringLiteral("        TX0      TX1      TX2\n");
+        for (std::size_t rx = 0; rx < last_state_data_.rssi.size(); ++rx) {
+            const auto& row = last_state_data_.rssi[rx];
+            QString line = QStringLiteral("RX%1:  ").arg(rx);
+            for (std::size_t t = 0; t < row.size(); ++t) {
+                if (t != 0) {
+                    line += QStringLiteral("  ");
+                }
+                line += QString::number(row[t], 'f', 2);
+            }
+            body += line;
+            if (rx + 1 < last_state_data_.rssi.size()) {
+                body += QLatin1Char('\n');
+            }
+        }
+        rssi = body;
+    } else if (last_state_data_.max_turns > 0) {
+        turn = QStringLiteral("%1 / %2").arg(last_state_data_.turn).arg(last_state_data_.max_turns);
+    }
+
+    if (state_turn_ != turn) {
+        state_turn_ = turn;
+        emit stateTurnChanged();
+    }
+    if (state_rssi_formatted_ != rssi) {
+        state_rssi_formatted_ = rssi;
+        emit stateRssiFormattedChanged();
+    }
 }
 
 } // namespace rssi_game::client
