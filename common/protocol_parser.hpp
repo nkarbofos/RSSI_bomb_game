@@ -65,4 +65,7 @@ struct ParsedServerLine {
 /// Parses one line from server (without trailing `\n`). On failure, `out.kind` is Unknown.
 void parseServerLine(const std::string& line, ParsedServerLine& out);
 
+/// Parses `x,y;x,y;...` as inside `rxpos=<...>` / `txReal=<...>`.
+std::vector<std::pair<int, int>> parseCellPositionList(const std::string& inner);
+
 } // namespace rssi_game::protocol

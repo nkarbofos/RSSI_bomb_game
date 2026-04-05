@@ -12,12 +12,12 @@ TEST(ProtocolParserGTest, Invite) {
 
 TEST(ProtocolParserGTest, GameStart) {
     rssi_game::protocol::ParsedServerLine p;
-    rssi_game::protocol::parseServerLine("GAME_START 10 10 30", p);
+    rssi_game::protocol::parseServerLine("GAME_START 10 10 60", p);
     EXPECT_EQ(p.kind, rssi_game::protocol::ServerLineKind::GameStart);
     ASSERT_TRUE(p.game_start.has_value());
     EXPECT_EQ(p.game_start->grid_w, 10);
     EXPECT_EQ(p.game_start->grid_h, 10);
-    EXPECT_EQ(p.game_start->placement_sec, 30);
+    EXPECT_EQ(p.game_start->placement_sec, 60);
 }
 
 TEST(ProtocolParserGTest, State) {

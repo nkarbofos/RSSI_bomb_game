@@ -31,6 +31,7 @@ public:
 
     GamePhase phase() const;
     GridSize gridSize() const;
+    int placementSeconds() const;
     int turn() const;
     bool isFinished() const;
 

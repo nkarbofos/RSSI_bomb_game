@@ -191,6 +191,10 @@ void NetworkClient::placeTransmitters(int x1, int y1, int x2, int y2, int x3, in
     });
 }
 
+void NetworkClient::endPlacement() {
+    asio::post(*impl_->io, [this]() { impl_->sendLine("END_PLACEMENT"); });
+}
+
 void NetworkClient::sendGradientStep() {
     asio::post(*impl_->io, [this]() { impl_->sendLine("GRADIENT_STEP"); });
 }

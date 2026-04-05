@@ -23,12 +23,12 @@ void ProtocolParserTest::parseInvite() {
 
 void ProtocolParserTest::parseGameStart() {
     rssi_game::protocol::ParsedServerLine p;
-    rssi_game::protocol::parseServerLine("GAME_START 10 10 30", p);
+    rssi_game::protocol::parseServerLine("GAME_START 10 10 60", p);
     QCOMPARE(static_cast<int>(p.kind), static_cast<int>(rssi_game::protocol::ServerLineKind::GameStart));
     QVERIFY(p.game_start.has_value());
     QCOMPARE(p.game_start->grid_w, 10);
     QCOMPARE(p.game_start->grid_h, 10);
-    QCOMPARE(p.game_start->placement_sec, 30);
+    QCOMPARE(p.game_start->placement_sec, 60);
 }
 
 void ProtocolParserTest::parseState() {

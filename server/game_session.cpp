@@ -31,6 +31,11 @@ GridSize GameSession::gridSize() const {
     return grid_size_;
 }
 
+int GameSession::placementSeconds() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return placement_seconds_;
+}
+
 int GameSession::turn() const {
     std::lock_guard<std::mutex> lock(mutex_);
     return turn_;

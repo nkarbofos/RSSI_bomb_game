@@ -39,7 +39,7 @@ bool parseDouble(const std::string& tok, double& out) {
     return !is.fail();
 }
 
-std::vector<std::pair<int, int>> parseCellList(const std::string& inner) {
+std::vector<std::pair<int, int>> parseCellPositionListImpl(const std::string& inner) {
     std::vector<std::pair<int, int>> out;
     std::string chunk = inner;
     std::size_t start = 0;
@@ -65,6 +65,10 @@ std::vector<std::pair<int, int>> parseCellList(const std::string& inner) {
 }
 
 } // namespace
+
+std::vector<std::pair<int, int>> parseCellPositionList(const std::string& inner) {
+    return parseCellPositionListImpl(inner);
+}
 
 void parseServerLine(const std::string& line, ParsedServerLine& out) {
     out = ParsedServerLine{};
@@ -126,13 +130,13 @@ void parseServerLine(const std::string& line, ParsedServerLine& out) {
                 auto lt = tok.find('<');
                 auto gt = tok.rfind('>');
                 if (lt != std::string::npos && gt != std::string::npos && gt > lt) {
-                    st.receiver_positions = parseCellList(tok.substr(lt + 1, gt - lt - 1));
+                    st.receiver_positions = parseCellPositionListImpl(tok.substr(lt + 1, gt - lt - 1));
                 }
             } else if (tok.rfind("txest=", 0) == 0) {
                 auto lt = tok.find('<');
                 auto gt = tok.rfind('>');
                 if (lt != std::string::npos && gt != std::string::npos && gt > lt) {
-                    st.tx_estimated = parseCellList(tok.substr(lt + 1, gt - lt - 1));
+                    st.tx_estimated = parseCellPositionListImpl(tok.substr(lt + 1, gt - lt - 1));
                 }
             } else if (tok.rfind("rssi=", 0) == 0) {
                 auto lt = tok.find('<');

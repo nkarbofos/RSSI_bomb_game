@@ -23,6 +23,9 @@ namespace rssi_game::server {
 namespace asio = boost::asio;
 using tcp = asio::ip::tcp;
 
+/// Длительность фазы расстановки передатчиков (секунды); совпадает с третьим аргументом `GAME_START`.
+constexpr int kPlacementSeconds = 60;
+
 static std::string trimRightCR(std::string s) {
     if (!s.empty() && s.back() == '\r') s.pop_back();
     return s;
@@ -77,6 +80,9 @@ public:
         invite_code_ = std::move(invite_code);
     }
 
+    /// Вызывается после `PLACEMENT_DONE` обоим игрокам — только у seeker есть состояние поля.
+    void sendStateToSeeker();
+
 private:
     void doRead();
     void doWrite();
@@ -87,7 +93,6 @@ private:
 
     void sendGameStartIfReady();
     void sendPlacementDone();
-    void sendStateToSeeker();
     void sendGameFinished();
 
     std::string formatStateMessage() const;
@@ -200,6 +205,7 @@ struct NetworkServer::Impl {
                     auto hider = getHider(code);
                     if (seeker) seeker->sendLine(msg);
                     if (hider) hider->sendLine(msg);
+                    if (seeker) seeker->sendStateToSeeker();
                 } catch (const std::exception& ex) {
                     std::cerr << "[server] placement timeout failure: " << ex.what() << "\n";
                 }
@@ -365,12 +371,30 @@ void ClientConnection::handleCommand(const std::string& line) {
             GamePhase p = session->phase();
             if (p == GamePhase::Lobby || p == GamePhase::Finished) {
                 GridSize grid{10, 10};
-                constexpr int placementSeconds = 30;
-                session->startPlacement(grid, placementSeconds);
+                session->startPlacement(grid, kPlacementSeconds);
             }
 
             sendGameStartIfReady();
-            server_.startPlacementTimer(code, session, 30);
+            server_.startPlacementTimer(code, session, kPlacementSeconds);
+            return;
+        }
+
+        if (cmd == "END_PLACEMENT") {
+            if (role_ != Role::Hider) {
+                sendError("END_PLACEMENT allowed only for hider");
+                return;
+            }
+            if (!session_) {
+                sendError("No session assigned");
+                return;
+            }
+            if (session_->phase() != GamePhase::Placement) {
+                sendError("END_PLACEMENT only in placement phase");
+                return;
+            }
+            session_->onPlacementTimeout();
+            server_.cancelPlacementTimer(invite_code_);
+            sendPlacementDone();
             return;
         }
 
@@ -494,16 +518,13 @@ void ClientConnection::sendGameStartIfReady() {
     if (!session_) return;
 
     auto grid = session_->gridSize();
-    constexpr int placementSeconds = 30;
+    const int placementSeconds = session_->placementSeconds();
     std::ostringstream os;
     os << "GAME_START " << grid.width << " " << grid.height << " " << placementSeconds;
     os << "\n";
 
     seeker->sendLine(os.str());
     hider->sendLine(os.str());
-
-    auto stateMsg = seeker->formatStateMessage();
-    seeker->sendLine(stateMsg);
 }
 
 void ClientConnection::sendPlacementDone() {
@@ -513,6 +534,7 @@ void ClientConnection::sendPlacementDone() {
     auto hider = server_.getHider(invite_code_);
     if (seeker) seeker->sendLine(msg);
     if (hider) hider->sendLine(msg);
+    if (seeker) seeker->sendStateToSeeker();
 }
 
 std::string ClientConnection::formatStateMessage() const {

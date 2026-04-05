@@ -93,14 +93,14 @@ TEST_F(TestServerFixture, FullProtocolFlow) {
     ASSERT_EQ(startSeeker.rfind("GAME_START", 0), 0u) << "Unexpected startSeeker: " << startSeeker;
     ASSERT_EQ(startHider.rfind("GAME_START", 0), 0u) << "Unexpected startHider: " << startHider;
 
-    std::string state0 = recvLine(seeker, seekerBuf, std::chrono::milliseconds(2000));
-    ASSERT_EQ(state0.rfind("STATE", 0), 0u) << "Expected STATE after GAME_START, got: " << state0;
-
     sendLine(hider, "PLACE_TRANSMITTERS 1 1 2 2 3 3");
     std::string placementSeeker = recvLine(seeker, seekerBuf, std::chrono::milliseconds(2000));
+    std::string stateAfterPlacement = recvLine(seeker, seekerBuf, std::chrono::milliseconds(2000));
     std::string placementHider = recvLine(hider, hiderBuf, std::chrono::milliseconds(2000));
     ASSERT_EQ(placementSeeker.rfind("PLACEMENT_DONE", 0), 0u)
         << "Unexpected placementSeeker: " << placementSeeker;
+    ASSERT_EQ(stateAfterPlacement.rfind("STATE", 0), 0u)
+        << "Expected STATE after PLACEMENT_DONE for seeker, got: " << stateAfterPlacement;
     ASSERT_EQ(placementHider.rfind("PLACEMENT_DONE", 0), 0u)
         << "Unexpected placementHider: " << placementHider;
 

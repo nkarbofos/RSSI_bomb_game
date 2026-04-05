@@ -22,6 +22,7 @@ public slots:
     void createLobby();
     void joinLobby(QString inviteCode);
     void placeTransmitters(int x1, int y1, int x2, int y2, int x3, int y3);
+    void endPlacement();
     void sendGradientStep();
     void moveReceiver(int idx, int x, int y);
     void addReceiver(int x, int y);
